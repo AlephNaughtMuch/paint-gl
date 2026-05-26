@@ -62,3 +62,6 @@ paint-gl
 
 # Build directory
 build/
+
+# Intellisense
+compile_commands.json
