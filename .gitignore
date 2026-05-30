@@ -65,3 +65,9 @@ build/
 
 # Intellisense
 compile_commands.json
+
+# editor config
+.clang-format
+.clang-tidy
+.editorconfig
+.gitattributes
