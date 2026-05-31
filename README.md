@@ -40,17 +40,23 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Framebuffer resize handling
 - Keyboard input and clean window lifecycle (ESC to exit)
 
+### Mesh Pipeline
+- Custom OBJ loader with support for n-gons, missing UVs/normals, and arbitrary face formats
+- Interleaved vertex buffer layout (position, normal, UV) uploaded via VAO, VBO, and EBO
+- RAII-based Mesh and Shader classes with automatic GPU resource cleanup via destructors
+- Vertex and fragment shader pipeline loaded from GLSL files at runtime
+- MVP matrix system (model, view, projection) passed as uniforms
+- Depth testing for correct fragment ordering
+
 ---
 
 ## 🗺️ Planned Features
 
 ### Layer 1 — Foundation
-- Vertex and fragment shader pipeline
-- OBJ mesh loading and rendering
 - Camera system with movement controls
 - Phong lighting in GLSL
 - Texture loading via stb_image
-- Depth testing and face culling
+- Face culling
 
 ### Layer 2 — Stylized Film Look
 - Deferred rendering pipeline with G-buffer
@@ -70,9 +76,26 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 
 ## 📚 Concepts Covered
 
-- OpenGL 4.6 core profile pipeline
-- GLSL vertex and fragment shaders
-- Modern buffer objects (VAO, VBO, EBO)
+### OpenGL Pipeline
+- OpenGL 4.6 core profile context creation and GLAD function pointer loading
+- Vertex Array Objects (VAO), Vertex Buffer Objects (VBO), Element Buffer Objects (EBO)
+- Interleaved vertex buffer layout and `glVertexAttribPointer` attribute description
+- Indexed drawing with `glDrawElements`
+- Depth testing with `GL_DEPTH_TEST`
+
+### Shaders
+- GLSL vertex and fragment shaders loaded and compiled at runtime
+- Shader program linking and error reporting
+- Uniform variables for MVP matrix upload
+
+### Math
+- Model, View, Projection matrix pipeline
+- Perspective projection and look-at view matrix via GLM
+
+### C++ Patterns
+- RAII for GPU resource management via constructors and destructors
+- Class design for Shader and Mesh
+- File parsing with `std::ifstream`, `std::istringstream`, and `std::stringstream`
 
 *(Updated as the project progresses)*
 
@@ -105,11 +128,19 @@ paint-gl/
 ├── src/                  # C++ source files
 │   ├── main.cpp
 │   ├── framebuffer.cpp
-│   └── input.cpp
+│   ├── input.cpp
+│   ├── obj_loader.cpp
+│   └── shader.cpp
 ├── include/              # Header files
 │   ├── framebuffer.h
-│   └── input.h
+│   ├── input.h
+│   ├── mesh.h
+│   ├── obj_loader.h
+│   ├── shader.h
+│   └── vertex.h
 ├── shaders/              # GLSL vertex and fragment shaders
+│   ├── default.vert
+│   └── default.frag
 ├── assets/               # OBJ meshes and textures
 ├── third_party/
 │   ├── glad/             # GLAD loader (OpenGL 4.6 core)
