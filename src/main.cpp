@@ -1,42 +1,40 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/trigonometric.hpp>
 #include <iostream>
 #include <ostream>
 
-#include "../include/framebuffer.h"
-#include "../include/input.h"
+#include "framebuffer.h"
+#include "input.h"
+#include "mesh.h"
+#include "obj_loader.h"
+#include "shader.h"
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // Shaders
-const char *vertexShaderSource = "#version 460 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "void main() {\n"
-                                 "    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0f);\n"
-                                 "}\0";
-const char *fragmentShaderSource = "#version 460 core\n"
-                                   "out vec4 FragColor;\n"
-                                   "void main() {\n"
-                                   "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-                                   "}\0";
+std::string vertexShaderFile = "shaders/default.vert";
+std::string fragShaderFile   = "shaders/default.frag";
 
-// Debug
-int success;
-char infoLog[512];
+// OBJ file
+std::string objFilepath = "assets/bunny.obj";
 
 int main() {
 
     // glfw: initialize and configure
-    //-------------------------------
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // glfw window creation
-    //---------------------
     GLFWwindow* window = glfwCreateWindow(
         SCR_WIDTH,
         SCR_HEIGHT,
@@ -55,125 +53,67 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     // glad: load all OpenGL function pointers
-    //----------------------------------------
     if (!(bool) gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+    glEnable(GL_DEPTH_TEST);
+
+    // Create MVP matrices
+    glm::mat4 model = glm::mat4(1.0f);
+
+    glm::mat4 projection = glm::perspective(
+        glm::radians(45.0f),
+        (float) SCR_WIDTH / (float) SCR_HEIGHT,
+        0.1f,
+        100.0f
+    );
+
+    glm::mat4 view = glm::lookAt(
+        glm::vec3(0.0f, 0.0f, 8.0f),
+        glm::vec3(0, 0, 0),
+        glm::vec3(0, 1, 0)
+    );
+
+    // Test 3D view by rotating the model slightly
+    model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0, 1, 0));
 
     // build and compile our shader program
-    // ------------------------------------
-    // Vertex Shader
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
+    Shader shaders = Shader(vertexShaderFile, fragShaderFile);
 
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR:SHADER::VERTEX::COMPILATION_FAILED\n" <<
-            infoLog << std::endl;
-    }
-
-    // Fragment Shader
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "ERROR:SHADER::FRAGMENT::COMPILATION_FAILED\n" <<
-            infoLog << std::endl;
-    }
-
-    // Link Shaders
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR:SHADER_LINK::SHADER_PROGRAM::LINKING_FAILED\n" <<
-            infoLog << std::endl;
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    // Send MVP matrices to shader
+    int modelLoc = glGetUniformLocation(shaders.ID, "model");
+    int perspectiveLoc = glGetUniformLocation(shaders.ID, "projection");
+    int viewLoc = glGetUniformLocation(shaders.ID, "view");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f
-    };
-
-    float point[] = { 0,0,0 };
-
-    // VAOs and VBOs
-    unsigned int VBO;
-    unsigned int VAO;
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(point), point, GL_STATIC_DRAW);
-
-    // Vertex Attributes formatting
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-        3 * sizeof(float), (void*) 0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's
-    // bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens.
-    // Modifying other VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs)
-    // when it's not directly necessary.
-    glBindVertexArray(0);
+    Mesh mesh = loadMeshFromObj(objFilepath);
+    setupMesh(&mesh);
 
 
     // Render loop
-    //------------
     while(!(bool) glfwWindowShouldClose(window)) {
         // input
-        // -----
         processInput(window);
 
         // render
-        // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // draw our first triangle
-        glUseProgram(shaderProgram);
-        // seeing as we only have a single VAO there's no need to bind it every time,
-        // but we'll do so to keep things a bit more organized
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_POINTS, 0, 1);
+        shaders.use();
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
+        glBindVertexArray(mesh.VAO);
+        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
-
     // glfw: terminate, clearing all previously allocated GLFW resources
-    //------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
