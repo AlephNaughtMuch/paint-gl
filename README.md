@@ -48,12 +48,20 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - MVP matrix system (model, view, projection) passed as uniforms
 - Depth testing for correct fragment ordering
 
+### Camera System
+- Free look camera with WASD movement and mouse look
+- Pitch and yaw driven forward vector calculation via trigonometry
+- Right vector derived from cross product of forward and up
+- Pitch clamping to prevent gimbal flip
+- Delta time based movement for frame rate independent speed
+- Configurable FOV, near and far planes, and movement speed
+- GLFW cursor capture and mouse callback via window user pointer
+
 ---
 
 ## 🗺️ Planned Features
 
 ### Layer 1 — Foundation
-- Camera system with movement controls
 - Phong lighting in GLSL
 - Texture loading via stb_image
 - Face culling
@@ -88,14 +96,26 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Shader program linking and error reporting
 - Uniform variables for MVP matrix upload
 
-### Math
-- Model, View, Projection matrix pipeline
+### Camera and Math
+- Free look camera with pitch, yaw, and derived vectors
+- Forward vector calculation from Euler angles via trigonometry
+- Cross product for right vector derivation
+- Model, view, and projection matrix pipeline
 - Perspective projection and look-at view matrix via GLM
+- Delta time for frame rate independent movement
+
+### Input
+- GLFW keyboard polling for WASD movement
+- GLFW mouse callback for look input
+- Window user pointer for passing application state to callbacks
+- Mouse offset calculation with first-frame guard
 
 ### C++ Patterns
 - RAII for GPU resource management via constructors and destructors
-- Class design for Shader and Mesh
+- Class design for Shader, Mesh, and Camera
+- Enum class for type-safe movement directions
 - File parsing with `std::ifstream`, `std::istringstream`, and `std::stringstream`
+- Static local variables for persistent callback state
 
 *(Updated as the project progresses)*
 
@@ -127,11 +147,13 @@ No engine, no scene graph, no OpenGL abstraction layer. Everything is written di
 paint-gl/
 ├── src/                  # C++ source files
 │   ├── main.cpp
+│   ├── camera.cpp
 │   ├── framebuffer.cpp
 │   ├── input.cpp
 │   ├── obj_loader.cpp
 │   └── shader.cpp
 ├── include/              # Header files
+│   ├── camera.h
 │   ├── framebuffer.h
 │   ├── input.h
 │   ├── mesh.h
