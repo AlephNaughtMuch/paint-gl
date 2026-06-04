@@ -41,6 +41,10 @@ void Camera::processKeyboard(CameraMovement direction, float deltaTime) {
         position -= right * speed * deltaTime;
     } else if (direction == CameraMovement::RIGHT) {
         position += right * speed * deltaTime;
+    } else if (direction == CameraMovement::UP) {
+        position.y += speed * deltaTime;
+    } else if (direction == CameraMovement::DOWN) {
+        position.y -= speed * deltaTime;
     }
 }
 
