@@ -7,7 +7,9 @@ enum class CameraMovement {
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT
+    RIGHT,
+    UP,
+    DOWN
 };
 
 class Camera {
@@ -31,7 +33,7 @@ class Camera {
         float zFar = 100.0f;
 
         float speed = 5.0f;
-        float sensitivity = 0.01f;
+        float sensitivity = 0.005f;
 
     private:
         float yaw = -90.0f;

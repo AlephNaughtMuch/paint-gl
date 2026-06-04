@@ -8,10 +8,12 @@ void processInput(GLFWwindow* window, float deltaTime) {
     }
 
     if (
-        glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
+        glfwGetKey(window, GLFW_KEY_W)    == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_S)    == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_A)    == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_D)    == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_UP)   == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS
    ) {
         CameraMovement direction;
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -20,8 +22,12 @@ void processInput(GLFWwindow* window, float deltaTime) {
             direction = CameraMovement::BACKWARD;
         } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
             direction = CameraMovement::LEFT;
-        } else {
+        } else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
             direction = CameraMovement::RIGHT;
+        } else if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+            direction = CameraMovement::UP;
+        } else {
+            direction = CameraMovement::DOWN;
         }
 
         Camera* cam = (Camera*) glfwGetWindowUserPointer(window);
