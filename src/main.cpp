@@ -1,14 +1,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/ext/vector_float3.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/trigonometric.hpp>
 #include <iostream>
-#include <ostream>
 
+#include "camera.h"
 #include "framebuffer.h"
 #include "input.h"
 #include "mesh.h"
@@ -52,6 +48,10 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
+    // glfw: Input mode
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouseCallback);
+
     // glad: load all OpenGL function pointers
     if (!(bool) gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
@@ -60,23 +60,13 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // Create MVP matrices
+    Camera cam = Camera(
+        glm::vec3(0,0,0),
+        glm::vec3(0,1,0),
+        glm::vec3(0,0,1)
+    );
+
     glm::mat4 model = glm::mat4(1.0f);
-
-    glm::mat4 projection = glm::perspective(
-        glm::radians(45.0f),
-        (float) SCR_WIDTH / (float) SCR_HEIGHT,
-        0.1f,
-        100.0f
-    );
-
-    glm::mat4 view = glm::lookAt(
-        glm::vec3(0.0f, 0.0f, 8.0f),
-        glm::vec3(0, 0, 0),
-        glm::vec3(0, 1, 0)
-    );
-
-    // Test 3D view by rotating the model slightly
-    model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0, 1, 0));
 
     // build and compile our shader program
     Shader shaders = Shader(vertexShaderFile, fragShaderFile);
@@ -86,19 +76,35 @@ int main() {
     int perspectiveLoc = glGetUniformLocation(shaders.ID, "projection");
     int viewLoc = glGetUniformLocation(shaders.ID, "view");
 
+
     // set up vertex data (and buffer(s)) and configure vertex attributes
     Mesh mesh = loadMeshFromObj(objFilepath);
     setupMesh(&mesh);
 
+    // delta time variables
+    GLfloat deltaTime = 0.0f;
+    GLfloat lastFrame = 0.0f;
+
+    // send camera as pointer
+    glfwSetWindowUserPointer(window, &cam);
 
     // Render loop
     while(!(bool) glfwWindowShouldClose(window)) {
+        // calculate delta time
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        glfwPollEvents();
+
         // input
-        processInput(window);
+        processInput(window, deltaTime);
 
         // render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glm::mat4 projection = cam.getProjectionMatrix((float) SCR_WIDTH / (float) SCR_HEIGHT);
+        glm::mat4 view = cam.getViewMatrix();
 
         shaders.use();
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -110,7 +116,6 @@ int main() {
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     // glfw: terminate, clearing all previously allocated GLFW resources
