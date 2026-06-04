@@ -1,7 +1,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/ext/vector_float3.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/trigonometric.hpp>
 #include <iostream>
 
 #include "camera.h"
@@ -70,12 +72,36 @@ int main() {
 
     // build and compile our shader program
     Shader shaders = Shader(vertexShaderFile, fragShaderFile);
+    shaders.use();
 
     // Send MVP matrices to shader
-    int modelLoc = glGetUniformLocation(shaders.ID, "model");
+    int modelLoc       = glGetUniformLocation(shaders.ID, "model");
     int perspectiveLoc = glGetUniformLocation(shaders.ID, "projection");
-    int viewLoc = glGetUniformLocation(shaders.ID, "view");
+    int viewLoc        = glGetUniformLocation(shaders.ID, "view");
 
+    // establish and send Phong uniforms to shader
+    glm::vec3 lightPos     = glm::vec3(-2, 5, 1);
+    glm::vec3 lightColor   = glm::vec3(1, 1, 1);
+    float ambientStrength  = 0.2f;
+    float diffuseStrength  = 1.0f;
+    float specularStrength = 0.5f;
+    float shininess        = 32.0f;
+
+    int lightPosLoc         = glGetUniformLocation(shaders.ID, "lightPos");
+    int camPosLoc           = glGetUniformLocation(shaders.ID, "cameraPos");
+    int lightColorLoc       = glGetUniformLocation(shaders.ID, "lightColor");
+    int ambientStrengthLoc  = glGetUniformLocation(shaders.ID, "ambientStrength");
+    int diffuseStrengthLoc  = glGetUniformLocation(shaders.ID, "diffuseStrength");
+    int specularStrengthLoc = glGetUniformLocation(shaders.ID, "specularStrength");
+    int shininessLoc        = glGetUniformLocation(shaders.ID, "shininess");
+
+    // send uniforms that don't change per frame here outside of the render loop
+    glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+    glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
+    glUniform1f(ambientStrengthLoc, ambientStrength);
+    glUniform1f(diffuseStrengthLoc, diffuseStrength);
+    glUniform1f(specularStrengthLoc, specularStrength);
+    glUniform1f(shininessLoc, shininess);
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     Mesh mesh = loadMeshFromObj(objFilepath);
@@ -102,11 +128,11 @@ int main() {
         // render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        model = glm::rotate(model, glm::radians(0.5f), glm::vec3(0,1,0));
         glm::mat4 projection = cam.getProjectionMatrix((float) SCR_WIDTH / (float) SCR_HEIGHT);
         glm::mat4 view = cam.getViewMatrix();
 
-        shaders.use();
+        glUniform3f(camPosLoc, cam.position.x, cam.position.y, cam.position.z);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(perspectiveLoc, 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
