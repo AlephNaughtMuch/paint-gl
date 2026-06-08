@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -12,6 +13,7 @@
 #include "mesh.h"
 #include "obj_loader.h"
 #include "shader.h"
+#include "texture.h"
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -23,6 +25,9 @@ std::string fragShaderFile   = "shaders/default.frag";
 
 // OBJ file
 std::string objFilepath = "assets/bunny.obj";
+
+// Texture file
+std::string textureFilePath = "";
 
 int main() {
 
@@ -111,6 +116,11 @@ int main() {
     Mesh mesh = loadMeshFromObj(objFilepath);
     setupMesh(&mesh);
 
+    // set up texture data
+    Texture texture = Texture(textureFilePath);
+    int textureSamplerLoc = glGetUniformLocation(shaders.ID, "textureSampler");
+    glUniform1i(textureSamplerLoc, 0);
+
     // delta time variables
     GLfloat deltaTime = 0.0f;
     GLfloat lastFrame = 0.0f;
@@ -132,9 +142,11 @@ int main() {
         // render
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        model = glm::rotate(model, glm::radians(0.5f), glm::vec3(0,1,0));
+        model = glm::rotate(glm::mat4(1.0f), (float) glfwGetTime() * glm::radians(45.0f), glm::vec3(0,1,0));
         glm::mat4 projection = cam.getProjectionMatrix((float) SCR_WIDTH / (float) SCR_HEIGHT);
         glm::mat4 view = cam.getViewMatrix();
+
+        texture.bind(0);
 
         glUniform3f(camPosLoc, cam.position.x, cam.position.y, cam.position.z);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));

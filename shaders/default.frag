@@ -10,12 +10,18 @@ uniform float diffuseStrength;
 uniform float specularStrength;
 uniform float shininess;
 
+uniform sampler2D textureSampler;
+
 in vec3 fragPos;
 in vec3 fragNormal;
+in vec2 fragUV;
 
 void main() {
     vec3 normal = normalize(fragNormal);
-    vec4 color = vec4(0.1f, 0.7f, 0.9f, 1.0f);
+
+    vec4 texColor = texture(textureSampler, fragUV);
+    // vec4 color = vec4(0.1f, 0.7f, 0.9f, 1.0f);
+    vec4 color = texColor;
     vec3 lightDir = normalize(lightPos - fragPos);
     vec3 camDir =  normalize(cameraPos - fragPos);
 

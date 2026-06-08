@@ -74,3 +74,6 @@ compile_commands.json
 
 # assets
 .assets/
+
+# non_git_assets
+non_git_assets

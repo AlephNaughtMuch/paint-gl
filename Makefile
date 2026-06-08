@@ -2,16 +2,16 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -std=c++17 -Wall -O2 -Ithird_party/glad/include -Iinclude
+CXXFLAGS = -std=c++17 -Wall -O2 -Ithird_party/glad/include -Ithird_party/stb -Iinclude
 
 # Linker flags
 LDFLAGS = -lglfw -lGL
 
-# Target 
+# Target
 TARGET = paint-gl
 
 # Source files
-SRCS = src/*.cpp third_party/glad/glad.c 
+SRCS = src/*.cpp third_party/glad/glad.c
 
 # Rule to link src files into the target executable
 $(TARGET): $(SRCS)
@@ -25,5 +25,5 @@ run: $(TARGET)
 	./$(TARGET)
 
 # Clean rule to remove generated files
-clean: 
+clean:
 	rm $(TARGET)
