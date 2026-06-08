@@ -1,10 +1,12 @@
 #include "obj_loader.h"
 #include "mesh.h"
+#include <cstdio>
 #include <fstream>
 #include <sstream>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 Mesh loadMeshFromObj(const std::string &filepath) {
@@ -66,56 +68,66 @@ Mesh loadMeshFromObj(const std::string &filepath) {
         }
     }
 
+    // Build a vertex cache to avoid duplication of vertices,
+    // optimizing the mesh data.
+    std::unordered_map<std::string, unsigned int> vertexCache;
+
     // Go over the face lines
     for (const auto& str: faceLines) {
         std::istringstream ss(str);
         std::string token;
         std::vector<Vertex> faceVertices;
+        std::vector<unsigned int> faceIndices;
 
         // Token is something like "1/2/3" or "1//3"
         while (ss >> token) {
+
             std::istringstream tt(token);
 
             // Grab the indices from the face line
             std::string posIndex;
             std::string uvIndex;
             std::string normalIndex;
+            auto tokenExists = vertexCache.find(token);
+            if (tokenExists != vertexCache.end()) {
+                faceIndices.push_back(vertexCache[token]);
+            } else {
+                std::getline(tt, posIndex, '/');
+                std::getline(tt, uvIndex, '/');
+                std::getline(tt, normalIndex, '/');
 
-            std::getline(tt, posIndex, '/');
-            std::getline(tt, uvIndex, '/');
-            std::getline(tt, normalIndex, '/');
+                // Look up position, uv and normal from the temp
+                // vectors we populated above and create a new
+                // Vertex object.
+                Vertex currentVertex;
+                if (!posIndex.empty()) {
+                    currentVertex.position = vertices[std::stoi(posIndex) - 1];
+                }
+                if (!normalIndex.empty()) {
+                    currentVertex.normal   = normals[std::stoi(normalIndex) - 1];
+                }
+                if (!uvIndex.empty()) {
+                    currentVertex.uv       = uvs[std::stoi(uvIndex) - 1];
+                }
 
-            // Look up position, uv and normal from the temp
-            // vectors we populated above and create a new
-            // Vertex object.
-            Vertex currentVertex;
-            if (!posIndex.empty()) {
-                currentVertex.position = vertices[std::stoi(posIndex) - 1];
-            }
-            if (!normalIndex.empty()) {
-                currentVertex.normal   = normals[std::stoi(normalIndex) - 1];
-            }
-            if (!uvIndex.empty()) {
-                currentVertex.uv       = uvs[std::stoi(uvIndex) - 1];
-            }
 
-            // Push the current vertex in the faceVertices vector
-            // in case we need to triangulate later.
-            faceVertices.push_back(currentVertex);
+                loadedMesh.vertices.push_back(currentVertex);
+                unsigned int index = loadedMesh.vertices.size() - 1;
+                vertexCache[token] = index;
+                faceIndices.push_back(index);
+            }
         }
 
         // Get number of faces
-        unsigned int faceNum = faceVertices.size();
+        unsigned int faceNum = faceIndices.size();
 
         // Triangulate
         for (unsigned int i = 1; i < faceNum - 1; ++i) {
-            loadedMesh.vertices.push_back(faceVertices[0]);
-            loadedMesh.indices.push_back(loadedMesh.vertices.size() - 1);
-            loadedMesh.vertices.push_back(faceVertices[i]);
-            loadedMesh.indices.push_back(loadedMesh.vertices.size() - 1);
-            loadedMesh.vertices.push_back(faceVertices[i + 1]);
-            loadedMesh.indices.push_back(loadedMesh.vertices.size() - 1);
+            loadedMesh.indices.push_back(faceIndices[0]);
+            loadedMesh.indices.push_back(faceIndices[i]);
+            loadedMesh.indices.push_back(faceIndices[i+1]);
         }
     }
+
     return loadedMesh;
 }
