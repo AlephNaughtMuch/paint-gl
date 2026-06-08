@@ -14,7 +14,7 @@ The progression so far:
 CPU software rasterizer (C) -> OpenGL real-time renderer (C++) -> Vulkan
 ```
 
-The software rasterizer ([softwareRenderer](https://github.com/AlephNaughtMuch/softwareRenderer)) established the pipeline from first principles — projection math, triangle rasterization, Phong shading, depth buffering — all on the CPU without any graphics API. This project moves that understanding onto the GPU, working directly against the OpenGL API to explore the same concepts in hardware.
+The software rasterizer ([softwareRenderer](https://github.com/AlephNaughtMuch/softwareRenderer)) established the pipeline from first principles - projection math, triangle rasterization, Phong shading, depth buffering - all on the CPU without any graphics API. This project moves that understanding onto the GPU, working directly against the OpenGL API to explore the same concepts in hardware.
 
 The goal is fluency in real-time rendering with a creative point of view: understanding not just how to call the API, but why the pipeline is structured the way it is, and using that understanding to produce something that looks genuinely distinctive.
 
@@ -24,9 +24,9 @@ The goal is fluency in real-time rendering with a creative point of view: unders
 
 The renderer targets three visual modes:
 
-- **Stylized film look** — toon shading, hard rim lighting, ink outlines via edge detection on the normal and depth buffers, limited colour palette
-- **Painterly / expressive** — screen-space techniques that break the clean CG look, canvas texture overlays, expressive light response
-- **Technical showcase** — a deferred pipeline with exposed G-buffer debug modes, normal and depth visualisation, render pass inspection
+- **Stylized film look** - toon shading, hard rim lighting, ink outlines via edge detection on the normal and depth buffers, limited colour palette
+- **Painterly / expressive** - screen-space techniques that break the clean CG look, canvas texture overlays, expressive light response
+- **Technical showcase** - a deferred pipeline with exposed G-buffer debug modes, normal and depth visualisation, render pass inspection
 
 The NPR direction is a vehicle for understanding concepts that are universally applicable in real-time rendering: framebuffers, render passes, screen-space algorithms, shader architecture. The creative sensibility comes from a professional background in film lighting and compositing, applied here to real-time graphics.
 
@@ -38,10 +38,11 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - GLFW Wayland window and OpenGL 4.6 core context
 - GLAD function pointer loading
 - Framebuffer resize handling
-- Keyboard input and clean window lifecycle (ESC to exit)
+- Keyboard and mouse input with clean window lifecycle (ESC to exit)
 
 ### Mesh Pipeline
 - Custom OBJ loader with support for n-gons, missing UVs/normals, and arbitrary face formats
+- Vertex deduplication via hash map cache -- 6x reduction in vertex count on dense meshes (432k to 72k on the Stanford bunny)
 - Interleaved vertex buffer layout (position, normal, UV) uploaded via VAO, VBO, and EBO
 - RAII-based Mesh and Shader classes with automatic GPU resource cleanup via destructors
 - Vertex and fragment shader pipeline loaded from GLSL files at runtime
@@ -57,16 +58,22 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Configurable FOV, near and far planes, and movement speed
 - GLFW cursor capture and mouse callback via window user pointer
 
+### Lighting
+- Phong lighting model implemented in GLSL -- ambient, diffuse, and specular components
+- Normal matrix transformation for correct lighting under non-uniform scaling
+- Fragment position and normal interpolated across triangles via vertex shader outputs
+- Configurable light position, light colour, ambient strength, diffuse strength, specular strength, and shininess
+- Camera position passed as uniform for view-dependent specular calculation
+
 ---
 
 ## 🗺️ Planned Features
 
-### Layer 1 — Foundation
-- Phong lighting in GLSL
+### Layer 1 - Foundation
 - Texture loading via stb_image
 - Face culling
 
-### Layer 2 — Stylized Film Look
+### Layer 2 - Stylized Film Look
 - Deferred rendering pipeline with G-buffer
 - Toon shading with configurable light bands
 - Hard rim lighting
@@ -74,7 +81,7 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Limited colour palette via fragment shader quantisation
 - G-buffer debug visualisation modes
 
-### Layer 3 — Painterly / Expressive
+### Layer 3 - Painterly / Expressive
 - Screen-space canvas texture overlay
 - Brush stroke simulation
 - Expressive NPR post-processing passes
@@ -94,7 +101,14 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 ### Shaders
 - GLSL vertex and fragment shaders loaded and compiled at runtime
 - Shader program linking and error reporting
-- Uniform variables for MVP matrix upload
+- Uniform variables for MVP matrices, lighting properties, and per-frame camera data
+- Vertex shader outputs interpolated across fragments via `in`/`out` variables
+
+### Lighting
+- Phong lighting model -- ambient, diffuse, and specular components
+- Normal matrix for correct normal transformation under non-uniform scaling
+- View-dependent specular via camera position uniform
+- Per-fragment lighting in GLSL fragment shader
 
 ### Camera and Math
 - Free look camera with pitch, yaw, and derived vectors
@@ -116,6 +130,7 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Enum class for type-safe movement directions
 - File parsing with `std::ifstream`, `std::istringstream`, and `std::stringstream`
 - Static local variables for persistent callback state
+- `std::unordered_map` for O(1) vertex deduplication during mesh loading
 
 *(Updated as the project progresses)*
 
@@ -136,7 +151,7 @@ No engine, no scene graph, no OpenGL abstraction layer. Everything is written di
 
 ## 📖 Learning Sources
 
-- [LearnOpenGL](https://learnopengl.com/) — primary OpenGL reference
+- [LearnOpenGL](https://learnopengl.com/) - primary OpenGL reference
 - GLFW and OpenGL documentation
 
 ---
