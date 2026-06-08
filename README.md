@@ -4,6 +4,14 @@ A **real-time renderer built in C++ with OpenGL**, exploring the modern GPU pipe
 
 ---
 
+## 🎬 Demo
+
+![paint-gl Layer 1 Demo](assets/demo_phong_helmet.gif)
+
+*Damaged Helmet rendered with Phong lighting and texture -- Layer 1 milestone.*
+
+---
+
 ## 💼 Why This Project Exists
 
 Graphics programming sits at the intersection of technical depth and visual craft. Coming from a background in VFX, film lighting, and compositing, this project is about deepening that intersection by building a real-time renderer from the ground up rather than working through an existing engine or API wrapper.
@@ -39,12 +47,13 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - GLAD function pointer loading
 - Framebuffer resize handling
 - Keyboard and mouse input with clean window lifecycle (ESC to exit)
+- Hardware backface culling via `GL_CULL_FACE`
 
 ### Mesh Pipeline
 - Custom OBJ loader with support for n-gons, missing UVs/normals, and arbitrary face formats
 - Vertex deduplication via hash map cache -- 6x reduction in vertex count on dense meshes (432k to 72k on the Stanford bunny)
 - Interleaved vertex buffer layout (position, normal, UV) uploaded via VAO, VBO, and EBO
-- RAII-based Mesh and Shader classes with automatic GPU resource cleanup via destructors
+- RAII-based Mesh, Shader, and Texture classes with automatic GPU resource cleanup via destructors
 - Vertex and fragment shader pipeline loaded from GLSL files at runtime
 - MVP matrix system (model, view, projection) passed as uniforms
 - Depth testing for correct fragment ordering
@@ -65,13 +74,17 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Configurable light position, light colour, ambient strength, diffuse strength, specular strength, and shininess
 - Camera position passed as uniform for view-dependent specular calculation
 
+### Texturing
+- Texture loading via stb_image with support for PNG and JPEG
+- Automatic mipmap generation for correct rendering at distance
+- Linear filtering with trilinear mipmapping
+- RGBA and RGB format detection based on channel count
+- 1x1 white pixel fallback for untextured meshes -- Phong lighting preserved without a texture file
+- Texture coordinates interpolated per fragment and combined with Phong lighting
+
 ---
 
 ## 🗺️ Planned Features
-
-### Layer 1 - Foundation
-- Texture loading via stb_image
-- Face culling
 
 ### Layer 2 - Stylized Film Look
 - Deferred rendering pipeline with G-buffer
@@ -97,6 +110,7 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Interleaved vertex buffer layout and `glVertexAttribPointer` attribute description
 - Indexed drawing with `glDrawElements`
 - Depth testing with `GL_DEPTH_TEST`
+- Hardware backface culling with `GL_CULL_FACE`
 
 ### Shaders
 - GLSL vertex and fragment shaders loaded and compiled at runtime
@@ -109,6 +123,14 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Normal matrix for correct normal transformation under non-uniform scaling
 - View-dependent specular via camera position uniform
 - Per-fragment lighting in GLSL fragment shader
+
+### Texturing
+- Texture objects, binding, and texture units in OpenGL
+- stb_image for PNG/JPEG loading with vertical flip correction
+- Mipmap generation and trilinear filtering
+- `sampler2D` uniform and `texture()` GLSL function
+- Combining texture colour with Phong lighting in the fragment shader
+- Defensive fallback for missing texture files
 
 ### Camera and Math
 - Free look camera with pitch, yaw, and derived vectors
@@ -126,7 +148,7 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 
 ### C++ Patterns
 - RAII for GPU resource management via constructors and destructors
-- Class design for Shader, Mesh, and Camera
+- Class design for Shader, Mesh, Camera, and Texture
 - Enum class for type-safe movement directions
 - File parsing with `std::ifstream`, `std::istringstream`, and `std::stringstream`
 - Static local variables for persistent callback state
@@ -166,7 +188,8 @@ paint-gl/
 │   ├── framebuffer.cpp
 │   ├── input.cpp
 │   ├── obj_loader.cpp
-│   └── shader.cpp
+│   ├── shader.cpp
+│   └── texture.cpp
 ├── include/              # Header files
 │   ├── camera.h
 │   ├── framebuffer.h
@@ -174,6 +197,7 @@ paint-gl/
 │   ├── mesh.h
 │   ├── obj_loader.h
 │   ├── shader.h
+│   ├── texture.h
 │   └── vertex.h
 ├── shaders/              # GLSL vertex and fragment shaders
 │   ├── default.vert
@@ -215,6 +239,6 @@ make clean
 
 ---
 
-## 🎬 Demo
+## 🎨 Asset Credits
 
-*(Coming soon)*
+- **Damaged Helmet** by [cjsliuj](https://sketchfab.com/cjsliuj) on Sketchfab, licensed under [CC Attribution](https://creativecommons.org/licenses/by/4.0/)

@@ -24,10 +24,10 @@ std::string vertexShaderFile = "shaders/default.vert";
 std::string fragShaderFile   = "shaders/default.frag";
 
 // OBJ file
-std::string objFilepath = "assets/bunny.obj";
+std::string objFilepath = "non_git_assets/damaged_helmet_source_glb.obj";
 
 // Texture file
-std::string textureFilePath = "";
+std::string textureFilePath = "non_git_assets/Material_MR.png";
 
 int main() {
 
