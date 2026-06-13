@@ -53,10 +53,18 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Custom OBJ loader with support for n-gons, missing UVs/normals, and arbitrary face formats
 - Vertex deduplication via hash map cache -- 6x reduction in vertex count on dense meshes (432k to 72k on the Stanford bunny)
 - Interleaved vertex buffer layout (position, normal, UV) uploaded via VAO, VBO, and EBO
-- RAII-based Mesh, Shader, and Texture classes with automatic GPU resource cleanup via destructors
+- RAII-based Mesh, Shader, Texture, GBuffer, and Quad classes with automatic GPU resource cleanup via destructors
 - Vertex and fragment shader pipeline loaded from GLSL files at runtime
 - MVP matrix system (model, view, projection) passed as uniforms
 - Depth testing for correct fragment ordering
+
+### Deferred Rendering Pipeline
+- G-buffer with three texture attachments -- world space position (RGBA32F), world space normal (RGBA32F), and albedo (RGBA8)
+- Depth renderbuffer attached to the G-buffer FBO for correct depth testing during the geometry pass
+- Geometry pass renders surface data into the G-buffer using dedicated GLSL shaders
+- Lighting pass reads G-buffer textures via a full-screen quad and computes Phong lighting per screen pixel
+- Dedicated `Renderer` class encapsulating the G-buffer, geometry and lighting shaders, full-screen quad, and two-pass pipeline
+- Clean `render(mesh, texture, camera, model)` interface -- `main` has no knowledge of internal rendering architecture
 
 ### Camera System
 - Free look camera with WASD movement and mouse look
@@ -87,7 +95,6 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 ## 🗺️ Planned Features
 
 ### Layer 2 - Stylized Film Look
-- Deferred rendering pipeline with G-buffer
 - Toon shading with configurable light bands
 - Hard rim lighting
 - Edge detection via normal and depth buffer derivatives
@@ -111,12 +118,23 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 - Indexed drawing with `glDrawElements`
 - Depth testing with `GL_DEPTH_TEST`
 - Hardware backface culling with `GL_CULL_FACE`
+- Framebuffer Objects (FBO) with multiple colour attachments and depth renderbuffer
+- Multiple render targets via `glDrawBuffers`
+- Texture units and `glActiveTexture` for multi-texture binding
 
 ### Shaders
 - GLSL vertex and fragment shaders loaded and compiled at runtime
 - Shader program linking and error reporting
 - Uniform variables for MVP matrices, lighting properties, and per-frame camera data
 - Vertex shader outputs interpolated across fragments via `in`/`out` variables
+- Multiple fragment shader outputs via `layout (location = N) out`
+- Full-screen quad vertex shader for screen-space passes
+
+### Deferred Rendering
+- G-buffer architecture -- position, normal, and albedo texture attachments
+- Two-pass rendering -- geometry pass populates the G-buffer, lighting pass reads it
+- Screen-space lighting calculation on a full-screen quad
+- Precision considerations -- floating point textures for position and normals, 8-bit for albedo
 
 ### Lighting
 - Phong lighting model -- ambient, diffuse, and specular components
@@ -148,7 +166,9 @@ The NPR direction is a vehicle for understanding concepts that are universally a
 
 ### C++ Patterns
 - RAII for GPU resource management via constructors and destructors
-- Class design for Shader, Mesh, Camera, and Texture
+- Class design for Shader, Mesh, Camera, Texture, GBuffer, Quad, and Renderer
+- Member initializer lists for classes with non-default-constructible members
+- Encapsulation of rendering pipeline internals behind a clean public interface
 - Enum class for type-safe movement directions
 - File parsing with `std::ifstream`, `std::istringstream`, and `std::stringstream`
 - Static local variables for persistent callback state
@@ -186,20 +206,30 @@ paint-gl/
 │   ├── main.cpp
 │   ├── camera.cpp
 │   ├── framebuffer.cpp
+│   ├── gbuffer.cpp
 │   ├── input.cpp
 │   ├── obj_loader.cpp
+│   ├── quad.cpp
+│   ├── renderer.cpp
 │   ├── shader.cpp
 │   └── texture.cpp
 ├── include/              # Header files
 │   ├── camera.h
 │   ├── framebuffer.h
+│   ├── gbuffer.h
 │   ├── input.h
 │   ├── mesh.h
 │   ├── obj_loader.h
+│   ├── quad.h
+│   ├── renderer.h
 │   ├── shader.h
 │   ├── texture.h
 │   └── vertex.h
 ├── shaders/              # GLSL vertex and fragment shaders
+│   ├── geometry.vert
+│   ├── geometry.frag
+│   ├── lighting.vert
+│   ├── lighting.frag
 │   ├── default.vert
 │   └── default.frag
 ├── assets/               # OBJ meshes and textures
